@@ -78,3 +78,20 @@ class Arena:
             position_expectation_list += game_position_expectation_list
 
         return position_expectation_list
+
+    def RunMultipleGames(self, number_of_games):
+        number_of_agent_wins = 0
+        number_of_agent_losses = 0
+        number_of_draws = 0
+        for game_ndx in range(number_of_games):
+            agent_starts = game_ndx %2 == 0
+            state_action_list, game_status = self.RunGame(agent_starts)
+            if game_status == learnbyplay.games.rules.GameStatus.WIN:
+                number_of_agent_wins += 1
+            elif game_status == learnbyplay.games.rules.GameStatus.LOSS:
+                number_of_agent_losses += 1
+            elif game_status == learnbyplay.games.rules.GameStatus.DRAW:
+                number_of_draws += 1
+            else:
+                raise ValueError(f"Arena.RunMultipleGames(): game_status = {game_status}")
+        return number_of_agent_wins, number_of_agent_losses, number_of_draws
