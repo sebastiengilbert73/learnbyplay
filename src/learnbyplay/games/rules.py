@@ -31,3 +31,7 @@ class Authority(abc.ABC):
     @abc.abstractmethod
     def MaximumNumberOfMoves(self) -> int:  # Returns the maximum number of moves in a game, after which the game is a draw
         pass
+
+    @abc.abstractmethod
+    def StateTensorShape(self) -> Tuple[int]:
+        pass
