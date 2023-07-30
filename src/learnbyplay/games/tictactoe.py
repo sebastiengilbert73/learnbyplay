@@ -80,11 +80,15 @@ class TicTacToe(learnbyplay.games.rules.Authority):
     def MaximumNumberOfMoves(self):
         return 9
 
-    def SwapPosition(self, state_tsr):
+    def StateTensorShape(self):
+        return (2, 3, 3)
+
+    """def SwapPosition(self, state_tsr):
         swapped_state_tsr = torch.zeros_like(state_tsr)
         swapped_state_tsr[0, :, :] = state_tsr[1, :, :]
         swapped_state_tsr[1, :, :] = state_tsr[0, :, :]
         return swapped_state_tsr
+    """
 
     def ThereIsALine(self, state_tsr, channel):
         there_is_a_line = False
