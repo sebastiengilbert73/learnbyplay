@@ -23,8 +23,8 @@ def main(
         agent = learnbyplay.player.ConsolePlayer(agent_identifier)
     opponent = learnbyplay.player.RandomPlayer(opponent_identifier)
 
-    arena = Arena(authority, agent, opponent, agentStarts)
-    state_action_list, game_status = arena.RunGame()
+    arena = Arena(authority, agent, opponent)
+    state_action_list, game_status = arena.RunGame(agentStarts)
     for state_action in state_action_list:
         print(authority.ToString(state_action[0]))
         print(state_action[1])
