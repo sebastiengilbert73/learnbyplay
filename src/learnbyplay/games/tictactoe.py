@@ -1,11 +1,12 @@
 import learnbyplay.games.rules
 import torch
 import copy
+import logging
 
 class TicTacToe(learnbyplay.games.rules.Authority):
     def __init__(self):
         super(TicTacToe, self).__init__()
-        self.player_to_channel = {'X': 0, 'O': 1}
+        self.player_to_channel = {'X': 0, 'O': 1}  # X is the agent; O is the opponent
 
     def LegalMoves(self, state_tsr, player):
         legal_moves = []
@@ -58,6 +59,7 @@ class TicTacToe(learnbyplay.games.rules.Authority):
         X_won = self.ThereIsALine(new_state_tsr, self.player_to_channel['X'])
         O_won = self.ThereIsALine(new_state_tsr, self.player_to_channel['O'])
         all_squares_are_taken = self.AllSquaresAreTaken(new_state_tsr)
+        #logging.debug(f"TicTacToe.Move(): X_won = {X_won}; O_won = {O_won}; all_squares_are_taken = {all_squares_are_taken}")
 
         game_status = learnbyplay.games.rules.GameStatus.NONE
         if X_won:
@@ -77,6 +79,12 @@ class TicTacToe(learnbyplay.games.rules.Authority):
 
     def MaximumNumberOfMoves(self):
         return 9
+
+    def SwapPosition(self, state_tsr):
+        swapped_state_tsr = torch.zeros_like(state_tsr)
+        swapped_state_tsr[0, :, :] = state_tsr[1, :, :]
+        swapped_state_tsr[1, :, :] = state_tsr[0, :, :]
+        return swapped_state_tsr
 
     def ThereIsALine(self, state_tsr, channel):
         there_is_a_line = False
@@ -121,6 +129,6 @@ class TicTacToe(learnbyplay.games.rules.Authority):
     def AllSquaresAreTaken(self, state_tsr):
         for row in range(3):
             for col in range(3):
-                if state_tsr[0, row, col] == 0 or state_tsr[1, row, col] == 0:
+                if state_tsr[0, row, col] == 0 and state_tsr[1, row, col] == 0:
                     return False
         return True
