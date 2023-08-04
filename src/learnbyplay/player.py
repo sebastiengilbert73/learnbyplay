@@ -41,22 +41,9 @@ class PositionRegressionPlayer(Player):
         self.neural_net.eval()
         self.temperature = temperature
         self.flatten_state = flatten_state
+        self.device = next(self.neural_net.parameters()).device
 
     def ChooseMove(self, authority: learnbyplay.games.rules.Authority, state_tsr: torch.Tensor) -> str:
-        """legal_moves = authority.LegalMoves(state_tsr, self.identifier)
-        #legal_move_to_predictedReturn = {}
-        corresponding_predicted_returns = []
-        for move_ndx in range(len(legal_moves)):
-            move = legal_moves[move_ndx]
-            candidate_state_tsr, game_status = authority.Move(
-                state_tsr, move, self.identifier
-            )
-            candidate_state_tsr = candidate_state_tsr.float()
-            if self.flatten_state:
-                candidate_state_tsr = candidate_state_tsr.view(-1)
-            predicted_return = self.neural_net(candidate_state_tsr.unsqueeze(0)).squeeze().item()
-            corresponding_predicted_returns.append(predicted_return)
-        """
         move_predicted_return_list = self.PredictReturns(state_tsr, authority)
         legal_moves = []
         corresponding_predicted_returns = []
@@ -80,7 +67,7 @@ class PositionRegressionPlayer(Player):
             candidate_state_tsr, game_status = authority.Move(
                 state_tsr, move, self.identifier
             )
-            candidate_state_tsr = candidate_state_tsr.float()
+            candidate_state_tsr = candidate_state_tsr.float().to(self.device)
             if self.flatten_state:
                 candidate_state_tsr = candidate_state_tsr.view(-1)
             predicted_return = self.neural_net(candidate_state_tsr.unsqueeze(0)).squeeze().item()
