@@ -5,16 +5,18 @@ import torch
 import copy
 
 class Arena:
-    def __init__(self, authority: learnbyplay.games.rules.Authority, agent: Player, opponent: Player) -> None:
+    def __init__(self, authority: learnbyplay.games.rules.Authority, agent: Player, opponent: Player,
+                 device='cpu') -> None:
         self.authority = authority
         self.agent = agent
         self.opponent = opponent
+        self.device = device
         #self.index_to_player = {0: self.agent, 1: self.opponent}
         #if not self.agent_starts:
         #    self.index_to_player = {0: self.opponent, 1: self.agent}
 
     def RunGame(self, agent_starts):
-        state_tsr = self.authority.InitialState()
+        state_tsr = self.authority.InitialState().to(self.device)
         state_action_list = []
         number_of_moves = 0
         game_status = learnbyplay.games.rules.GameStatus.NONE
