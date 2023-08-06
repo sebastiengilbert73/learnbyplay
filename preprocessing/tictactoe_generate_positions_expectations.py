@@ -53,7 +53,8 @@ def main(
             identifier='X',
             neural_net=agent_neural_net,
             temperature=temperature,
-            flatten_state=True
+            flatten_state=True,
+            acts_as_opponent=False
         )
 
     opponent = learnbyplay.player.RandomPlayer(opponent_identifier)
@@ -72,7 +73,8 @@ def main(
             identifier='O',
             neural_net=opponent_neural_net,
             temperature=temperature,
-            flatten_state=True
+            flatten_state=True,
+            acts_as_opponent=True
         )
 
     arena = Arena(authority, agent, opponent)
