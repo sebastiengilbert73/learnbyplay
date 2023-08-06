@@ -35,3 +35,7 @@ class Authority(abc.ABC):
     @abc.abstractmethod
     def StateTensorShape(self) -> Tuple[int]:
         pass
+
+    @abc.abstractmethod
+    def SwapAgentAndOpponent(self, state_tsr: torch.Tensor) -> torch.Tensor:
+        pass
