@@ -20,7 +20,8 @@ def main(
     agentFilepath,
     opponentArchitecture,
     opponentFilepath,
-    temperature
+    temperature,
+    printPositionsAndExpectations
 ):
     logging.info("tictactoe_generate_positions_expectations.main()")
 
@@ -93,8 +94,9 @@ def main(
 
     logging.info(f"Done!")
 
-    #for position_expectation in position_expectation_list:
-    #    print(f"{authority.ToString(position_expectation[0])}\n{position_expectation[1]}\n\n")
+    if printPositionsAndExpectations:
+        for position_expectation in position_expectation_list:
+            print(f"{authority.ToString(position_expectation[0])}\n{position_expectation[1]}\n\n")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -108,6 +110,7 @@ if __name__ == '__main__':
     parser.add_argument('--opponentArchitecture', help="The architecture for the opponent neural network. Default: 'SaintAndre_512'", default='SaintAndre_512')
     parser.add_argument('--opponentFilepath', help="The filepath to the opponent neural network. Default: 'None'", default='None')
     parser.add_argument('--temperature', help="The SoftMax temperature. Default: 1.0", type=float, default=1.0)
+    parser.add_argument('--printPositionsAndExpectations', help="Print the positions and expectations to the console", action='store_true')
     args = parser.parse_args()
     if args.agentFilepath.upper() == 'NONE':
         args.agentFilepath = None
@@ -122,5 +125,6 @@ if __name__ == '__main__':
         args.agentFilepath,
         args.opponentArchitecture,
         args.opponentFilepath,
-        args.temperature
+        args.temperature,
+        args.printPositionsAndExpectations
     )
