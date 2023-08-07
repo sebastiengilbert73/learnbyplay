@@ -36,7 +36,7 @@ class ConsolePlayer(Player):
 
 class PositionRegressionPlayer(Player):
     def __init__(self, identifier, neural_net, temperature=1.0, flatten_state=True,
-                 acts_as_opponent=False):
+                 acts_as_opponent=False, epsilon=0):
         super(PositionRegressionPlayer, self).__init__(identifier)
         self.neural_net = neural_net
         self.neural_net.eval()
@@ -44,6 +44,7 @@ class PositionRegressionPlayer(Player):
         self.flatten_state = flatten_state
         self.device = next(self.neural_net.parameters()).device
         self.acts_as_opponent = acts_as_opponent
+        self.epsilon = epsilon
 
     def ChooseMove(self, authority: learnbyplay.games.rules.Authority,
                    state_tsr: torch.Tensor) -> str:
@@ -61,9 +62,17 @@ class PositionRegressionPlayer(Player):
                 highest_predicted_return = predicted_return
                 champion_move = move
 
+        if self.epsilon > 0:  # Epsilon-greedy choice
+            random_0to1 = random.random()
+            if random_0to1 <= self.epsilon:
+                return random.choice(legal_moves)
+            else:
+                return champion_move
+
         if self.temperature <= 0:  # Zero temperature: return the greedy best move
             return champion_move
 
+        # Softmax with non-zero temperature
         corresponding_predicted_temperature_returns_tsr = torch.tensor(corresponding_predicted_returns)/self.temperature
         corresponding_probabilities_tsr = torch.nn.functional.softmax(corresponding_predicted_temperature_returns_tsr, dim=0)
         random_nbr = random.random()
