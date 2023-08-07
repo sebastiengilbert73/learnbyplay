@@ -20,6 +20,7 @@ def main(
     agentFilepath,
     opponentArchitecture,
     opponentFilepath,
+    epsilon,
     temperature,
     printPositionsAndExpectations
 ):
@@ -55,7 +56,8 @@ def main(
             neural_net=agent_neural_net,
             temperature=temperature,
             flatten_state=True,
-            acts_as_opponent=False
+            acts_as_opponent=False,
+            epsilon=epsilon
         )
 
     opponent = learnbyplay.player.RandomPlayer(opponent_identifier)
@@ -75,7 +77,8 @@ def main(
             neural_net=opponent_neural_net,
             temperature=temperature,
             flatten_state=True,
-            acts_as_opponent=True
+            acts_as_opponent=True,
+            epsilon=epsilon
         )
 
     arena = Arena(authority, agent, opponent)
@@ -109,6 +112,7 @@ if __name__ == '__main__':
     parser.add_argument('--agentFilepath', help="The filepath to the agent neural network. Default: 'None'", default='None')
     parser.add_argument('--opponentArchitecture', help="The architecture for the opponent neural network. Default: 'SaintAndre_512'", default='SaintAndre_512')
     parser.add_argument('--opponentFilepath', help="The filepath to the opponent neural network. Default: 'None'", default='None')
+    parser.add_argument('--epsilon', help="The epsilon parameter, for epsilon-greedy choices. Default: 0.0", type=float, default=0.0)
     parser.add_argument('--temperature', help="The SoftMax temperature. Default: 1.0", type=float, default=1.0)
     parser.add_argument('--printPositionsAndExpectations', help="Print the positions and expectations to the console", action='store_true')
     args = parser.parse_args()
@@ -125,6 +129,7 @@ if __name__ == '__main__':
         args.agentFilepath,
         args.opponentArchitecture,
         args.opponentFilepath,
+        args.epsilon,
         args.temperature,
         args.printPositionsAndExpectations
     )
