@@ -6,6 +6,7 @@ import argparse
 import random
 import os
 import architectures.tictactoe_arch as architectures
+import ast
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)-15s %(levelname)s %(message)s')
 
@@ -34,7 +35,8 @@ def main(
     useCpu,
     learningRate,
     weightDecay,
-    numberOfEpochs
+    numberOfEpochs,
+    startingNeuralNetworkFilepath
 ):
     device = 'cpu'
     if not useCpu and torch.cuda.is_available():
@@ -47,8 +49,6 @@ def main(
 
     if not os.path.exists(outputDirectory):
         os.makedirs(outputDirectory)
-
-
 
     # Load the dataset
     dataset = PositionExpectation(dataset_filepath=datasetFilepath)
@@ -72,6 +72,8 @@ def main(
         )
     else:
         raise NotImplementedError(f"train_tictactoe.main(): Not implemented architecture '{architecture}'")
+    if startingNeuralNetworkFilepath is not None:
+        neural_net.load_state_dict(torch.load(startingNeuralNetworkFilepath))
 
     neural_net.to(device)
 
@@ -153,8 +155,11 @@ if __name__ == '__main__':
     parser.add_argument('--useCpu', help="Use the CPU, even if a GPU is available", action='store_true')
     parser.add_argument('--learningRate', help="The learning rate. Default: 0.001", type=float, default=0.001)
     parser.add_argument('--weightDecay', help="The weight decay. Default: 0.00001", type=float, default=0.00001)
-    parser.add_argument('--numberOfEpochs', help="The number of epochs. Default: 100", type=int, default=100)
+    parser.add_argument('--numberOfEpochs', help="The number of epochs. Default: 50", type=int, default=50)
+    parser.add_argument('--startingNeuralNetworkFilepath', help="The filepath to the starting neural network. Default: 'None'", default='None')
     args = parser.parse_args()
+    if args.startingNeuralNetworkFilepath.upper() == 'NONE':
+        args.startingNeuralNetworkFilepath = None
     main(
         args.datasetFilepath,
         args.outputDirectory,
@@ -166,5 +171,6 @@ if __name__ == '__main__':
         args.useCpu,
         args.learningRate,
         args.weightDecay,
-        args.numberOfEpochs
+        args.numberOfEpochs,
+        args.startingNeuralNetworkFilepath
     )
