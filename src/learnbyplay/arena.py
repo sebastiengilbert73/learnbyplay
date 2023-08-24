@@ -17,6 +17,8 @@ class Arena:
 
     def RunGame(self, agent_starts):
         state_tsr = self.authority.InitialState().to(self.device)
+        self.agent.Reset()
+        self.opponent.Reset()
         state_action_list = []
         number_of_moves = 0
         game_status = learnbyplay.games.rules.GameStatus.NONE
