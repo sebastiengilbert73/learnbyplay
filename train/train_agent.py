@@ -90,6 +90,12 @@ def main(
             latent_size=int(chunks[1]),
             dropout_ratio=dropoutRatio
         )
+    elif architecture.startswith('Coptic_'):
+        chunks = SplitArchName(architecture)  # ['Coptic', '512']
+        neural_net = tictactoe_arch.Coptic(
+            number_of_channels=int(chunks[1]),
+            dropout_ratio=dropoutRatio
+        )
     elif architecture.startswith('Century21_'):
         chunks = SplitArchName(architecture)
         neural_net = sumto100_arch.Century21(
