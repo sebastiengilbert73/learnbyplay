@@ -38,7 +38,7 @@ python utilities/sumto100_state_value.py \
 	--outputDirectory="./experiments/output_sumto100_state_value_level1" \
 	--architecture=Century21_512
 	
-for level in {1..12}
+for level in {1..24}
 do
 	dataset_filepath="./experiments/output_sumto100_generate_positions_expectations_level${level}/dataset.csv"
 	python preprocessing/generate_positions_expectations.py \
@@ -71,6 +71,6 @@ do
 		
 	python utilities/sumto100_state_value.py \
 		"./experiments/output_sumto100_train_agent_level${next_level}/Century21_512.pth" \
-		--outputDirectory="./experiments/output_sumto100_state_value_level${next_level}" \
+		--outputDirectory="./experiments/output_sumto100_train_agent_level${next_level}" \
 		--architecture=Century21_512
 done
