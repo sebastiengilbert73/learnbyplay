@@ -12,6 +12,10 @@ class Player(abc.ABC):
     def ChooseMove(self, authority: learnbyplay.games.rules.Authority, state_tsr: torch.Tensor) -> str:
         pass
 
+    @abc.abstractmethod
+    def Reset(self):
+        pass
+
 class RandomPlayer(Player):
     def __init__(self, identifier):
         super(RandomPlayer, self).__init__(identifier)
@@ -19,6 +23,9 @@ class RandomPlayer(Player):
     def ChooseMove(self, authority: learnbyplay.games.rules.Authority, state_tsr: torch.Tensor) -> str:
         legal_moves = authority.LegalMoves(state_tsr, self.identifier)
         return random.choice(legal_moves)
+
+    def Reset(self):
+        pass
 
 class ConsolePlayer(Player):
     def __init__(self, identifier):
@@ -34,9 +41,12 @@ class ConsolePlayer(Player):
             the_chosen_move_is_legal = chosen_move in legal_moves
         return chosen_move
 
+    def Reset(self):
+        pass
+
 class PositionRegressionPlayer(Player):
     def __init__(self, identifier, neural_net, temperature=1.0, flatten_state=True,
-                 acts_as_opponent=False, epsilon=0):
+                 acts_as_opponent=False, epsilon=0, epsilonDecayAlpha=1.0):
         super(PositionRegressionPlayer, self).__init__(identifier)
         self.neural_net = neural_net
         self.neural_net.eval()
@@ -45,6 +55,8 @@ class PositionRegressionPlayer(Player):
         self.device = next(self.neural_net.parameters()).device
         self.acts_as_opponent = acts_as_opponent
         self.epsilon = epsilon
+        self.current_epsilon = self.epsilon
+        self.epsilon_decay_alpha = epsilonDecayAlpha
 
     def ChooseMove(self, authority: learnbyplay.games.rules.Authority,
                    state_tsr: torch.Tensor) -> str:
@@ -62,9 +74,9 @@ class PositionRegressionPlayer(Player):
                 highest_predicted_return = predicted_return
                 champion_move = move
 
-        if self.epsilon > 0:  # Epsilon-greedy choice
+        if self.current_epsilon > 0:  # Epsilon-greedy choice
             random_0to1 = random.random()
-            if random_0to1 <= self.epsilon:
+            if random_0to1 <= self.current_epsilon:
                 return random.choice(legal_moves)
             else:
                 return champion_move
@@ -82,6 +94,9 @@ class PositionRegressionPlayer(Player):
             if running_sum >= random_nbr:
                 return legal_moves[move_ndx]
 
+        if self.epsilon_decay_alpha > 0 and self.epsilon_decay_alpha <= 1.0:
+            self.current_epsilon = self.current_epsilon * self.epsilon_decay_alpha
+
     def PredictReturns(self, state_tsr, authority):
         legal_moves = authority.LegalMoves(state_tsr, self.identifier)
         move_predicted_return_list = []
@@ -98,3 +113,6 @@ class PositionRegressionPlayer(Player):
             predicted_return = self.neural_net(candidate_state_tsr.unsqueeze(0)).squeeze().item()
             move_predicted_return_list.append((move, predicted_return))
         return move_predicted_return_list
+
+    def Reset(self):
+        self.current_epsilon = self.epsilon
