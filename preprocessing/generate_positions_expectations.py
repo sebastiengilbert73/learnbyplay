@@ -25,7 +25,8 @@ def main(
     opponentFilepath,
     epsilon,
     temperature,
-    printPositionsAndExpectations
+    printPositionsAndExpectations,
+    epsilonDecayAlpha
 ):
     logging.info("generate_positions_expectations.main()")
 
@@ -83,7 +84,8 @@ def main(
             temperature=temperature,
             flatten_state=flatten_state,
             acts_as_opponent=False,
-            epsilon=epsilon
+            epsilon=epsilon,
+            epsilonDecayAlpha=epsilonDecayAlpha
         )
 
     opponent = learnbyplay.player.RandomPlayer(opponent_identifier)
@@ -117,7 +119,8 @@ def main(
             temperature=temperature,
             flatten_state=flatten_state,
             acts_as_opponent=True,
-            epsilon=epsilon
+            epsilon=epsilon,
+            epsilonDecayAlpha=epsilonDecayAlpha
         )
 
     arena = Arena(authority, agent, opponent)
@@ -166,6 +169,7 @@ if __name__ == '__main__':
     parser.add_argument('--epsilon', help="The epsilon parameter, for epsilon-greedy choices. Default: 0.0", type=float, default=0.0)
     parser.add_argument('--temperature', help="The SoftMax temperature. Default: 1.0", type=float, default=1.0)
     parser.add_argument('--printPositionsAndExpectations', help="Print the positions and expectations to the console", action='store_true')
+    parser.add_argument('--epsilonDecayAlpha', help="The rate of decay for epsilon. Default: 1.0", type=float, default=1.0)
     args = parser.parse_args()
     if args.agentFilepath.upper() == 'NONE':
         args.agentFilepath = None
@@ -183,5 +187,6 @@ if __name__ == '__main__':
         args.opponentFilepath,
         args.epsilon,
         args.temperature,
-        args.printPositionsAndExpectations
+        args.printPositionsAndExpectations,
+        args.epsilonDecayAlpha
     )
