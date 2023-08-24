@@ -39,9 +39,16 @@ def main(
         agent = learnbyplay.player.ConsolePlayer(agent_identifier)
     elif agentNeuralNetworkFilepath is not None:
         neural_net = None
-        if agentArchitecture == 'SaintAndre_512':
+        if agentArchitecture.startswith('SaintAndre_'):
+            chunks = ChunkArchName(agentArchitecture)
             neural_net = architectures.SaintAndre(
-                latent_size=512,
+                latent_size=int(chunks[1]),
+                dropout_ratio=0.5
+            )
+        elif agentArchitecture.startswith('Coptic_'):
+            chunks = ChunkArchName(agentArchitecture)
+            neural_net = architectures.Coptic(
+                number_of_channels=int(chunks[1]),
                 dropout_ratio=0.5
             )
         else:
@@ -58,9 +65,16 @@ def main(
     opponent = learnbyplay.player.RandomPlayer(opponent_identifier)
     if opponentNeuralNetworkFilepath is not None:
         opponent_neural_net = None
-        if opponentArchitecture == 'SaintAndre_512':
+        if opponentArchitecture.startswith('SaintAndre_'):
+            chunks = ChunkArchName(opponentArchitecture)
             opponent_neural_net = architectures.SaintAndre(
-                latent_size=512,
+                latent_size=int(chunks[1]),
+                dropout_ratio=0.5
+            )
+        elif opponentArchitecture.startswith('Coptic_'):
+            chunks = ChunkArchName(opponentArchitecture)
+            opponent_neural_net = architectures.Coptic(
+                number_of_channels=int(chunks[1]),
                 dropout_ratio=0.5
             )
         else:
@@ -80,6 +94,11 @@ def main(
     arena = Arena(authority, agent, opponent)
     number_of_agent_wins, number_of_agent_losses, number_of_draws = arena.RunMultipleGames(numberOfGames)
     logging.info(f"number_of_agent_wins = {number_of_agent_wins}; number_of_agent_losses = {number_of_agent_losses}; number_of_draws = {number_of_draws}")
+    return number_of_agent_wins, number_of_agent_losses, number_of_draws
+
+def ChunkArchName(arch_name):
+    chunks = arch_name.split('_')
+    return chunks
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
