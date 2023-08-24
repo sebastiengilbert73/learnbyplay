@@ -55,9 +55,16 @@ def main(
     agent = learnbyplay.player.RandomPlayer(agent_identifier)
     if agentFilepath is not None:
         agent_neural_net = None
-        if agentArchitecture == 'SaintAndre_512':
+        if agentArchitecture.startswith('SaintAndre_'):
+            chunks = ChunkArchName(agentArchitecture)
             agent_neural_net = tictactoe_arch.SaintAndre(
-                latent_size=512,
+                latent_size=int(chunks[1]),
+                dropout_ratio=0.5
+            )
+        elif agentArchitecture.startswith('Coptic_'):
+            chunks = ChunkArchName(agentArchitecture)
+            agent_neural_net = tictactoe_arch.Coptic(
+                number_of_channels=int(chunks[1]),
                 dropout_ratio=0.5
             )
         elif agentArchitecture.startswith('Century21_'):
@@ -82,9 +89,16 @@ def main(
     opponent = learnbyplay.player.RandomPlayer(opponent_identifier)
     if opponentFilepath is not None:
         opponent_neural_net = None
-        if opponentArchitecture == 'SaintAndre_512':
+        if opponentArchitecture.startswith('SaintAndre_'):
+            chunks = ChunkArchName(opponentArchitecture)
             opponent_neural_net = tictactoe_arch.SaintAndre(
-                latent_size=512,
+                latent_size=int(chunks[1]),
+                dropout_ratio=0.5
+            )
+        elif opponentArchitecture.startswith('Coptic_'):
+            chunks = ChunkArchName(opponentArchitecture)
+            opponent_neural_net = tictactoe_arch.Coptic(
+                number_of_channels=int(chunks[1]),
                 dropout_ratio=0.5
             )
         elif opponentArchitecture.startswith('Century21_'):
