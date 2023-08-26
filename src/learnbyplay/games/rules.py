@@ -39,3 +39,7 @@ class Authority(abc.ABC):
     @abc.abstractmethod
     def SwapAgentAndOpponent(self, state_tsr: torch.Tensor) -> torch.Tensor:
         pass
+
+    @abc.abstractmethod
+    def SwapIdentifier(self, identifier: str) -> str:
+        pass
