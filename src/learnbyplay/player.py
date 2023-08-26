@@ -1,8 +1,10 @@
 import abc
+import copy
 from typing import Dict, List, Any, Set, Tuple, Optional, Union
 import learnbyplay.games.rules
 import torch
 import random
+import sys
 
 class Player(abc.ABC):
     def __init__(self, identifier: str):
@@ -97,4 +99,60 @@ class PositionRegressionPlayer(Player):
                 candidate_state_tsr = candidate_state_tsr.view(-1)
             predicted_return = self.neural_net(candidate_state_tsr.unsqueeze(0)).squeeze().item()
             move_predicted_return_list.append((move, predicted_return))
+        return move_predicted_return_list
+
+    def MaxiMinOneLevel(self, state_tsr, authority):
+        if self.acts_as_opponent:
+            raise NotImplementedError(f"player.MaxiMinOneLevel(): The player acts as opponent. This scenario hasn't been tested!")
+        legal_moves = authority.LegalMoves(state_tsr, self.identifier)
+        #print(f"player.MaxiMinOneLevel(): legal_moves = {legal_moves}")
+        move_predicted_return_list = []
+        opponent_identifier = authority.SwapIdentifier(self.identifier)
+        for move_ndx in range(len(legal_moves)):
+            move = legal_moves[move_ndx]
+            #print(f"player.MaxiMinOneLevel(): move = {move}")
+            candidate_state_tsr, game_status = authority.Move(
+                state_tsr, move, self.identifier
+            )
+            if game_status == learnbyplay.games.rules.GameStatus.WIN:
+                move_predicted_return_list.append((move, 1.0))
+            elif game_status == learnbyplay.games.rules.GameStatus.LOSS:
+                move_predicted_return_list.append((move, -1.0))
+            elif game_status == learnbyplay.games.rules.GameStatus.DRAW:
+                move_predicted_return_list.append((move, 0.0))
+            else:  # The game is not over: Check the opponent candidate moves
+                opponent_legal_moves = authority.LegalMoves(candidate_state_tsr, opponent_identifier)
+                # Evaluate the positions resulting from the opponent legal moves
+                opponent_move_to_return = {}
+                for opponent_move_ndx in range(len(opponent_legal_moves)):
+                    opponent_move = opponent_legal_moves[opponent_move_ndx]
+
+                    opponent_candidate_state_tsr, game_status = authority.Move(
+                        candidate_state_tsr, opponent_move, opponent_identifier
+                    )
+                    #print(f"player.MaxiMinOneLevel(): opponent_move: {opponent_move}; game_status = {game_status}")
+                    if game_status == learnbyplay.games.rules.GameStatus.WIN:
+                        opponent_move_to_return[opponent_move] = -1.0
+                    elif game_status == learnbyplay.games.rules.GameStatus.LOSS:
+                        opponent_move_to_return[opponent_move] = 1.0
+                    elif game_status == learnbyplay.games.rules.GameStatus.DRAW:
+                        opponent_move_to_return[opponent_move] = 0.0
+                    else:  # The game is not over
+                        # Swap the tensor to evaluate with position using the agent neural network
+                        swapped_opponent_candidate_state_tsr = authority.SwapAgentAndOpponent(opponent_candidate_state_tsr)
+                        if self.flatten_state:
+                            swapped_opponent_candidate_state_tsr = swapped_opponent_candidate_state_tsr.view(-1)
+                        swapped_opponent_candidate_state_tsr = swapped_opponent_candidate_state_tsr.float().to(self.device)
+                        predicted_return = self.neural_net(
+                            swapped_opponent_candidate_state_tsr.unsqueeze(0)).squeeze().item()
+                        # Negate the return, since we want a value from the agent's point of view
+                        predicted_return = -1.0 * predicted_return
+                        opponent_move_to_return[opponent_move] = predicted_return
+                        #print(f"player.MaxiMinOneLevel(): opponent_move: {opponent_move}; predicted_return = {predicted_return}")
+                # The opponent chooses the minimum (i.e. most negative) return among the choices
+                minimum_return = sys.float_info.max
+                for opponent_candidate_move, opponent_candidate_return in opponent_move_to_return.items():
+                    if opponent_candidate_return < minimum_return:
+                        minimum_return = opponent_candidate_return
+                move_predicted_return_list.append((move, minimum_return))
         return move_predicted_return_list
