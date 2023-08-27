@@ -37,12 +37,13 @@ class ConsolePlayer(Player):
         return chosen_move
 
 class PositionRegressionPlayer(Player):
-    def __init__(self, identifier, neural_net, temperature=1.0, flatten_state=True,
-                 acts_as_opponent=False, epsilon=0):
+    def __init__(self, identifier, neural_net, temperature=1.0, look_ahead_depth=1,
+                 flatten_state=True, acts_as_opponent=False, epsilon=0):
         super(PositionRegressionPlayer, self).__init__(identifier)
         self.neural_net = neural_net
         self.neural_net.eval()
         self.temperature = temperature
+        self.look_ahead_depth = look_ahead_depth
         self.flatten_state = flatten_state
         self.device = next(self.neural_net.parameters()).device
         self.acts_as_opponent = acts_as_opponent
@@ -50,33 +51,59 @@ class PositionRegressionPlayer(Player):
 
     def ChooseMove(self, authority: learnbyplay.games.rules.Authority,
                    state_tsr: torch.Tensor) -> str:
-        #if must_swap_agent_and_opponent:
-        #    state_tsr = authority.SwapAgentAndOpponent(state_tsr)
-        move_predicted_return_list = self.PredictReturns(state_tsr, authority)
-        legal_moves = []
-        corresponding_predicted_returns = []
-        highest_predicted_return = -2.0
-        champion_move = None
-        for move, predicted_return in move_predicted_return_list:
-            legal_moves.append(move)
-            corresponding_predicted_returns.append(predicted_return)
-            if predicted_return > highest_predicted_return:
-                highest_predicted_return = predicted_return
-                champion_move = move
+        if self.epsilon > 0:
+            return self.ChooseWithEpsilonGreedy(authority, state_tsr)
+        elif self.look_ahead_depth == 1:
+            return self.ChooseWithTemperatureOneLevel(authority, state_tsr)
+        elif self.look_ahead_depth == 2:
+            return self.ChooseWithTemperatureTwoLevels(authority, state_tsr)
+        else:
+            raise NotImplementedError(f"PositionRegressionPlayer.ChooseMove(): Not supported combination of self.epsilon ({self.epsilon}) and self.look_ahead_depth ({self.look_ahead_depth})")
 
-        if self.epsilon > 0:  # Epsilon-greedy choice
-            random_0to1 = random.random()
-            if random_0to1 <= self.epsilon:
-                return random.choice(legal_moves)
-            else:
-                return champion_move
+    def ChooseWithEpsilonGreedy(self, authority, state_tsr):
+        move_predicted_return_list = self.PredictReturns(state_tsr, authority)
+        legal_moves, corresponding_predicted_returns, champion_move, \
+            highest_predicted_return = self.ChampionMove(move_predicted_return_list)
+
+        random_0to1 = random.random()
+        if random_0to1 <= self.epsilon:
+            return random.choice(legal_moves)
+        else:
+            return champion_move
+
+    def ChooseWithTemperatureOneLevel(self, authority, state_tsr):
+        move_predicted_return_list = self.PredictReturns(state_tsr, authority)
+        legal_moves, corresponding_predicted_returns, champion_move, \
+            highest_predicted_return = self.ChampionMove(move_predicted_return_list)
 
         if self.temperature <= 0:  # Zero temperature: return the greedy best move
             return champion_move
 
         # Softmax with non-zero temperature
-        corresponding_predicted_temperature_returns_tsr = torch.tensor(corresponding_predicted_returns)/self.temperature
-        corresponding_probabilities_tsr = torch.nn.functional.softmax(corresponding_predicted_temperature_returns_tsr, dim=0)
+        corresponding_predicted_temperature_returns_tsr = torch.tensor(
+            corresponding_predicted_returns) / self.temperature
+        corresponding_probabilities_tsr = torch.nn.functional.softmax(corresponding_predicted_temperature_returns_tsr,
+                                                                      dim=0)
+        random_nbr = random.random()
+        running_sum = 0
+        for move_ndx in range(corresponding_probabilities_tsr.shape[0]):
+            running_sum += corresponding_probabilities_tsr[move_ndx].item()
+            if running_sum >= random_nbr:
+                return legal_moves[move_ndx]
+
+    def ChooseWithTemperatureTwoLevels(self, authority, state_tsr):
+        move_predicted_return_list = self.MaxiMinOneLevel(state_tsr, authority)
+        legal_moves, corresponding_predicted_returns, champion_move, \
+            highest_predicted_return = self.ChampionMove(move_predicted_return_list)
+
+        if self.temperature <= 0:  # Zero temperature: return the greedy best move
+            return champion_move
+
+        # Softmax with non-zero temperature
+        corresponding_predicted_temperature_returns_tsr = torch.tensor(
+            corresponding_predicted_returns) / self.temperature
+        corresponding_probabilities_tsr = torch.nn.functional.softmax(corresponding_predicted_temperature_returns_tsr,
+                                                                      dim=0)
         random_nbr = random.random()
         running_sum = 0
         for move_ndx in range(corresponding_probabilities_tsr.shape[0]):
@@ -92,18 +119,23 @@ class PositionRegressionPlayer(Player):
             candidate_state_tsr, game_status = authority.Move(
                 state_tsr, move, self.identifier
             )
-            candidate_state_tsr = candidate_state_tsr.float().to(self.device)
-            if self.acts_as_opponent:
-                candidate_state_tsr = authority.SwapAgentAndOpponent(candidate_state_tsr)
-            if self.flatten_state:
-                candidate_state_tsr = candidate_state_tsr.view(-1)
-            predicted_return = self.neural_net(candidate_state_tsr.unsqueeze(0)).squeeze().item()
-            move_predicted_return_list.append((move, predicted_return))
+            if game_status == learnbyplay.games.rules.GameStatus.WIN:
+                move_predicted_return_list.append((move, 1.0))
+            elif game_status == learnbyplay.games.rules.GameStatus.LOSS:
+                move_predicted_return_list.append((move, -1.0))
+            elif game_status == learnbyplay.games.rules.GameStatus.DRAW:
+                move_predicted_return_list.append((move, 0.0))
+            else:
+                candidate_state_tsr = candidate_state_tsr.float().to(self.device)
+                if self.acts_as_opponent:
+                    candidate_state_tsr = authority.SwapAgentAndOpponent(candidate_state_tsr)
+                if self.flatten_state:
+                    candidate_state_tsr = candidate_state_tsr.view(-1)
+                predicted_return = self.neural_net(candidate_state_tsr.unsqueeze(0)).squeeze().item()
+                move_predicted_return_list.append((move, predicted_return))
         return move_predicted_return_list
 
     def MaxiMinOneLevel(self, state_tsr, authority):
-        if self.acts_as_opponent:
-            raise NotImplementedError(f"player.MaxiMinOneLevel(): The player acts as opponent. This scenario hasn't been tested!")
         legal_moves = authority.LegalMoves(state_tsr, self.identifier)
         #print(f"player.MaxiMinOneLevel(): legal_moves = {legal_moves}")
         move_predicted_return_list = []
@@ -140,6 +172,8 @@ class PositionRegressionPlayer(Player):
                     else:  # The game is not over
                         # Swap the tensor to evaluate with position using the agent neural network
                         swapped_opponent_candidate_state_tsr = authority.SwapAgentAndOpponent(opponent_candidate_state_tsr)
+                        if self.acts_as_opponent:
+                            swapped_opponent_candidate_state_tsr = authority.SwapAgentAndOpponent(swapped_opponent_candidate_state_tsr)
                         if self.flatten_state:
                             swapped_opponent_candidate_state_tsr = swapped_opponent_candidate_state_tsr.view(-1)
                         swapped_opponent_candidate_state_tsr = swapped_opponent_candidate_state_tsr.float().to(self.device)
@@ -156,3 +190,16 @@ class PositionRegressionPlayer(Player):
                         minimum_return = opponent_candidate_return
                 move_predicted_return_list.append((move, minimum_return))
         return move_predicted_return_list
+
+    def ChampionMove(self, move_predicted_return_list):
+        legal_moves = []
+        corresponding_predicted_returns = []
+        highest_predicted_return = -2.0
+        champion_move = None
+        for move, predicted_return in move_predicted_return_list:
+            legal_moves.append(move)
+            corresponding_predicted_returns.append(predicted_return)
+            if predicted_return > highest_predicted_return:
+                highest_predicted_return = predicted_return
+                champion_move = move
+        return legal_moves, corresponding_predicted_returns, champion_move, highest_predicted_return
