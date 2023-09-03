@@ -15,7 +15,9 @@ class Arena:
         #if not self.agent_starts:
         #    self.index_to_player = {0: self.opponent, 1: self.agent}
 
-    def RunGame(self, agent_starts):
+    def RunGame(self, agent_starts, epsilons=None):
+        if epsilons is None:
+            epsilons = [0.0]
         state_tsr = self.authority.InitialState().to(self.device)
         state_action_list = []
         number_of_moves = 0
@@ -28,6 +30,11 @@ class Arena:
         while (game_status == learnbyplay.games.rules.GameStatus.NONE) and number_of_moves < self.authority.MaximumNumberOfMoves():
             player_ndx = number_of_moves % 2
             player = index_to_player[player_ndx]
+            if number_of_moves < len(epsilons):
+                epsilon = epsilons[number_of_moves]
+            else:
+                epsilon = epsilons[-1]
+            player.epsilon = epsilon
             chosen_move = player.ChooseMove(self.authority, state_tsr)
             state_action_list.append((copy.deepcopy(state_tsr), chosen_move))
 
@@ -48,11 +55,11 @@ class Arena:
         #print(f"Arena.RunGame(): game_status = {game_status}")
         return state_action_list, game_status
 
-    def GeneratePositionsAndExpectations(self, number_of_games: int, gamma: float):
+    def GeneratePositionsAndExpectations(self, number_of_games: int, gamma: float, epsilons: List[float]):
         position_expectation_list = []
         for game_ndx in range(number_of_games):
             agent_starts = game_ndx %2 == 0
-            state_action_list, game_status = self.RunGame(agent_starts)
+            state_action_list, game_status = self.RunGame(agent_starts, epsilons)
             starting_state_action_list = [state_action_list[i] for i in range(1, len(state_action_list), 2)]
             nonStarting_state_action_list = [state_action_list[i] for i in range(0, len(state_action_list), 2)]
             agent_state_action_list = None
@@ -81,13 +88,13 @@ class Arena:
 
         return position_expectation_list
 
-    def RunMultipleGames(self, number_of_games):
+    def RunMultipleGames(self, number_of_games, epsilons):
         number_of_agent_wins = 0
         number_of_agent_losses = 0
         number_of_draws = 0
         for game_ndx in range(number_of_games):
             agent_starts = game_ndx %2 == 0
-            state_action_list, game_status = self.RunGame(agent_starts)
+            state_action_list, game_status = self.RunGame(agent_starts, epsilons)
             if game_status == learnbyplay.games.rules.GameStatus.WIN:
                 number_of_agent_wins += 1
             elif game_status == learnbyplay.games.rules.GameStatus.LOSS:
@@ -96,4 +103,5 @@ class Arena:
                 number_of_draws += 1
             else:
                 raise ValueError(f"Arena.RunMultipleGames(): game_status = {game_status}")
+            #print(f"RunMultipleGames(): state_action_list = \n{state_action_list}")
         return number_of_agent_wins, number_of_agent_losses, number_of_draws
