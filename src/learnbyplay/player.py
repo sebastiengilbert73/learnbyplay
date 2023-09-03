@@ -7,8 +7,9 @@ import random
 import sys
 
 class Player(abc.ABC):
-    def __init__(self, identifier: str):
+    def __init__(self, identifier: str, epsilon: float = 0):
         self.identifier = identifier
+        self.epsilon = epsilon
 
     @abc.abstractmethod
     def ChooseMove(self, authority: learnbyplay.games.rules.Authority, state_tsr: torch.Tensor) -> str:
@@ -39,7 +40,7 @@ class ConsolePlayer(Player):
 class PositionRegressionPlayer(Player):
     def __init__(self, identifier, neural_net, temperature=1.0, look_ahead_depth=1,
                  flatten_state=True, acts_as_opponent=False, epsilon=0):
-        super(PositionRegressionPlayer, self).__init__(identifier)
+        super(PositionRegressionPlayer, self).__init__(identifier, epsilon)
         self.neural_net = neural_net
         self.neural_net.eval()
         self.temperature = temperature
@@ -47,7 +48,6 @@ class PositionRegressionPlayer(Player):
         self.flatten_state = flatten_state
         self.device = next(self.neural_net.parameters()).device
         self.acts_as_opponent = acts_as_opponent
-        self.epsilon = epsilon
 
     def ChooseMove(self, authority: learnbyplay.games.rules.Authority,
                    state_tsr: torch.Tensor) -> str:
