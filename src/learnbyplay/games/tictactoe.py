@@ -6,6 +6,7 @@ import logging
 class TicTacToe(learnbyplay.games.rules.Authority):
     def __init__(self):
         super(TicTacToe, self).__init__()
+        self.player_identifiers = ['X', 'O']
         self.player_to_channel = {'X': 0, 'O': 1}  # X is the agent; O is the opponent
 
     def LegalMoves(self, state_tsr, player):
@@ -88,14 +89,6 @@ class TicTacToe(learnbyplay.games.rules.Authority):
         swapped_state_tsr[0, :, :] = state_tsr[1, :, :]
         swapped_state_tsr[1, :, :] = state_tsr[0, :, :]
         return swapped_state_tsr
-
-    def SwapIdentifier(self, identifier):
-        if identifier == 'X':
-            return 'O'
-        elif identifier == 'O':
-            return 'X'
-        else:
-            raise NotImplementedError(f"TicTacToe.SwapIdentifier(): Not implemented identifier '{identifier}'")
 
     def ThereIsALine(self, state_tsr, channel):
         there_is_a_line = False
