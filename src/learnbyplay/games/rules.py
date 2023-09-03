@@ -12,6 +12,7 @@ class GameStatus(Enum):
 class Authority(abc.ABC):
     def __init__(self) -> None:
         super().__init__()
+        self.player_identifiers = ['player1', 'player2']
 
     @abc.abstractmethod
     def LegalMoves(self, state_tsr: torch.Tensor, player_identifier: str) -> List[str]:
@@ -40,6 +41,10 @@ class Authority(abc.ABC):
     def SwapAgentAndOpponent(self, state_tsr: torch.Tensor) -> torch.Tensor:
         pass
 
-    @abc.abstractmethod
     def SwapIdentifier(self, identifier: str) -> str:
-        pass
+        if identifier == self.player_identifiers[0]:
+            return self.player_identifiers[1]
+        elif identifier == self.player_identifiers[1]:
+            return self.player_identifiers[0]
+        else:
+            raise ValueError(f"Authority.SwapIdentifier(): identifier '{identifier}' is not in the list of player identifiers: {self.player_identifiers}")
