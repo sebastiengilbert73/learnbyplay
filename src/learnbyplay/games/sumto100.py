@@ -56,11 +56,3 @@ class SumTo100(learnbyplay.games.rules.Authority):
             if state_tsr[i] > 0:
                 return i
         return 0
-
-    def SwapIdentifier(self, identifier):
-        if identifier == 'agent':
-            return 'opponent'
-        elif identifier == 'opponent':
-            return 'agent'
-        else:
-            raise NotImplementedError(f"SumTo100.SwapIdentifier(): Not implemented identifier '{identifier}'")
