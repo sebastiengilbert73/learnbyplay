@@ -22,16 +22,13 @@ def main(
     opponentLookAheadDepth,
     numberOfGames,
     useCpu,
-    randomSeed
+    epsilons
 ):
     logging.info("tictactoe_run_multiple_games.main()")
 
     device = 'cpu'
     if not useCpu and torch.cuda.is_available():
         device = 'cuda'
-
-    random.seed(randomSeed)
-    torch.manual_seed(randomSeed)
 
     authority = learnbyplay.games.tictactoe.TicTacToe()
     agent_identifier = 'X'
@@ -63,7 +60,8 @@ def main(
             temperature=agentTemperature,
             flatten_state=True,
             acts_as_opponent=False,
-            look_ahead_depth=agentLookAheadDepth
+            look_ahead_depth=agentLookAheadDepth,
+            epsilon=0.0
         )
     opponent = learnbyplay.player.RandomPlayer(opponent_identifier)
     if opponentNeuralNetworkFilepath is not None:
@@ -91,12 +89,14 @@ def main(
             temperature=opponentTemperature,
             flatten_state=True,
             acts_as_opponent=True,
-            look_ahead_depth=opponentLookAheadDepth
+            look_ahead_depth=opponentLookAheadDepth,
+            epsilon=0.0
         )
 
 
     arena = Arena(authority, agent, opponent)
-    number_of_agent_wins, number_of_agent_losses, number_of_draws = arena.RunMultipleGames(numberOfGames)
+    number_of_agent_wins, number_of_agent_losses, number_of_draws = arena.RunMultipleGames(
+        numberOfGames, epsilons=epsilons)
     logging.info(f"number_of_agent_wins = {number_of_agent_wins}; number_of_agent_losses = {number_of_agent_losses}; number_of_draws = {number_of_draws}")
     return number_of_agent_wins, number_of_agent_losses, number_of_draws
 
@@ -121,11 +121,17 @@ if __name__ == '__main__':
     parser.add_argument('--numberOfGames', help="The number of games played. Default: 1000", type=int, default=1000)
     parser.add_argument('--useCpu', help="Force using CPU", action='store_true')
     parser.add_argument('--randomSeed', help="The random seed. Default: 0", type=int, default=0)
+    parser.add_argument('--epsilons', help="The espsilon values. Default: '[0.0]'", default='[0.0]')
     args = parser.parse_args()
+
+    random.seed(args.randomSeed)
+    torch.manual_seed(args.randomSeed)
+
     if args.agentNeuralNetworkFilepath.upper() == 'NONE':
         args.agentNeuralNetworkFilepath = None
     if args.opponentNeuralNetworkFilepath.upper() == 'NONE':
         args.opponentNeuralNetworkFilepath = None
+    args.epsilons = ast.literal_eval(args.epsilons)
     main(
         args.consolePlayer,
         args.agentArchitecture,
@@ -138,5 +144,5 @@ if __name__ == '__main__':
         args.opponentLookAheadDepth,
         args.numberOfGames,
         args.useCpu,
-        args.randomSeed
+        args.epsilons
     )
