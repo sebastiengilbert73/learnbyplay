@@ -23,7 +23,7 @@ def main(
     agentFilepath,
     opponentArchitecture,
     opponentFilepath,
-    epsilon,
+    epsilons,
     temperature,
     printPositionsAndExpectations
 ):
@@ -83,7 +83,7 @@ def main(
             temperature=temperature,
             flatten_state=flatten_state,
             acts_as_opponent=False,
-            epsilon=epsilon
+            epsilon=0
         )
 
     opponent = learnbyplay.player.RandomPlayer(opponent_identifier)
@@ -117,13 +117,14 @@ def main(
             temperature=temperature,
             flatten_state=flatten_state,
             acts_as_opponent=True,
-            epsilon=epsilon
+            epsilon=0
         )
 
     arena = Arena(authority, agent, opponent)
 
     position_expectation_list = arena.GeneratePositionsAndExpectations(number_of_games=numberOfGames,
-                                                                       gamma=gamma)
+                                                                       gamma=gamma,
+                                                                       epsilons=epsilons)
     number_of_cells = ProductOfElements(authority.InitialState().shape)
     with open(os.path.join(outputDirectory, "dataset.csv"), "w") as output_file:
         for feature_ndx in range(number_of_cells):
@@ -163,7 +164,7 @@ if __name__ == '__main__':
     parser.add_argument('--agentFilepath', help="The filepath to the agent neural network. Default: 'None'", default='None')
     parser.add_argument('--opponentArchitecture', help="The architecture for the opponent neural network. Default: 'SaintAndre_512'", default='SaintAndre_512')
     parser.add_argument('--opponentFilepath', help="The filepath to the opponent neural network. Default: 'None'", default='None')
-    parser.add_argument('--epsilon', help="The epsilon parameter, for epsilon-greedy choices. Default: 0.0", type=float, default=0.0)
+    parser.add_argument('--epsilons', help="The list of epsilon parameters. Default: '[1.0, 1.0, 0.1]'", default='[1.0, 1.0, 0.1]')
     parser.add_argument('--temperature', help="The SoftMax temperature. Default: 1.0", type=float, default=1.0)
     parser.add_argument('--printPositionsAndExpectations', help="Print the positions and expectations to the console", action='store_true')
     args = parser.parse_args()
@@ -171,6 +172,7 @@ if __name__ == '__main__':
         args.agentFilepath = None
     if args.opponentFilepath.upper() == 'NONE':
         args.opponentFilepath = None
+    args.epsilons = ast.literal_eval(args.epsilons)
     main(
         args.outputDirectory,
         args.game,
@@ -181,7 +183,7 @@ if __name__ == '__main__':
         args.agentFilepath,
         args.opponentArchitecture,
         args.opponentFilepath,
-        args.epsilon,
+        args.epsilons,
         args.temperature,
         args.printPositionsAndExpectations
     )
