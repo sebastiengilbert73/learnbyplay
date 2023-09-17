@@ -14,7 +14,7 @@ python preprocessing/generate_positions_expectations.py \
     --agentFilepath=None \
     --opponentArchitecture=None \
     --opponentFilepath=None \
-    --epsilon=0.1 \
+    --epsilons="[1.0]" \
     --temperature=0
 	
 dataset_filepath="./experiments/output_sumto100_generate_positions_expectations_level0/dataset.csv"
@@ -51,7 +51,7 @@ do
 		--agentFilepath="./experiments/output_sumto100_train_agent_level${level}/Century21_512.pth" \
 		--opponentArchitecture=Century21_512 \
 		--opponentFilepath="./experiments/output_sumto100_train_agent_level${level}/Century21_512.pth" \
-		--epsilon=0.1 \
+		--epsilons="[0.5, 0.5, 0.1]" \
 		--temperature=0
 		
 	declare -i next_level=$((level + 1))
