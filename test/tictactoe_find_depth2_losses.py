@@ -55,10 +55,16 @@ def main(
     opponent = learnbyplay.player.RandomPlayer(opponent_identifier)
 
     arena = Arena(authority, agent, opponent)
-    number_of_agent_wins, number_of_agent_losses, number_of_draws = arena.RunMultipleGames(
-        numberOfGames, epsilons=[0])
+    number_of_agent_wins, number_of_agent_losses, number_of_draws, stateActions_gameStatus = arena.RunMultipleGames(
+        numberOfGames, epsilons=[0], return_games=True)
     logging.info(f"number_of_agent_wins = {number_of_agent_wins}; number_of_agent_losses = {number_of_agent_losses}; number_of_draws = {number_of_draws}")
+    if number_of_agent_losses > 0:
+        for state_actions, game_status in stateActions_gameStatus:
+            if game_status == learnbyplay.games.rules.GameStatus.LOSS:
+                logging.info(f"Game lost:\n{state_actions}")
+
     return number_of_agent_wins, number_of_agent_losses, number_of_draws
+
 
 def ChunkArchName(arch_name):
     chunks = arch_name.split('_')
