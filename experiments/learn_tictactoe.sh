@@ -47,7 +47,7 @@ do
 		--agentFilepath="./experiments/output_tictactoe_train_agent_level${level}/SaintAndre_1024.pth" \
 		--opponentArchitecture=SaintAndre_1024 \
 		--opponentFilepath="./experiments/output_tictactoe_train_agent_level${level}/SaintAndre_1024.pth" \
-		--epsilons="[1.0, 1.0, 0.1]" \
+		--epsilons="[0.5, 0.5, 0.1]" \
 		--temperature=0 
 		
 	declare -i next_level=$((level + 1))
