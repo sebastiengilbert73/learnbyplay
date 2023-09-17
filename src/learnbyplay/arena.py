@@ -88,10 +88,11 @@ class Arena:
 
         return position_expectation_list
 
-    def RunMultipleGames(self, number_of_games, epsilons):
+    def RunMultipleGames(self, number_of_games, epsilons, return_games=False):
         number_of_agent_wins = 0
         number_of_agent_losses = 0
         number_of_draws = 0
+        stateActions_gameStatus_list = []
         for game_ndx in range(number_of_games):
             agent_starts = game_ndx %2 == 0
             state_action_list, game_status = self.RunGame(agent_starts, epsilons)
@@ -104,4 +105,9 @@ class Arena:
             else:
                 raise ValueError(f"Arena.RunMultipleGames(): game_status = {game_status}")
             #print(f"RunMultipleGames(): state_action_list = \n{state_action_list}")
-        return number_of_agent_wins, number_of_agent_losses, number_of_draws
+            if return_games:
+                stateActions_gameStatus_list.append((state_action_list, game_status))
+        if return_games:
+            return number_of_agent_wins, number_of_agent_losses, number_of_draws, stateActions_gameStatus_list
+        else:
+            return number_of_agent_wins, number_of_agent_losses, number_of_draws
