@@ -39,8 +39,24 @@ def main(
         if agentArchitecture.startswith('Usb_'):
             chunks = ChunkArchName(agentArchitecture)
             neural_net = architectures.Usb(
-                number_of_convs=chunks[1],
-                latent_size=chunks[2],
+                number_of_convs=int(chunks[1]),
+                latent_size=int(chunks[2]),
+                dropout_ratio=0.5
+            )
+        elif agentArchitecture.startswith('Dvi_'):
+            chunks = ChunkArchName(agentArchitecture)
+            neural_net = architectures.Dvi(
+                nconv1=int(chunks[1]),
+                nconv2=int(chunks[2]),
+                latent_size=int(chunks[3]),
+                dropout_ratio=0.5
+            )
+        elif agentArchitecture.startswith('Hdmi_'):
+            chunks = ChunkArchName(agentArchitecture)
+            neural_net = architectures.Hdmi(
+                nconv1=int(chunks[1]),
+                nconv2=int(chunks[2]),
+                latent_size=int(chunks[3]),
                 dropout_ratio=0.5
             )
         else:
@@ -50,7 +66,7 @@ def main(
             identifier=agent_identifier,
             neural_net=neural_net,
             temperature=agentTemperature,
-            flatten_state=True,
+            flatten_state=False,
             acts_as_opponent=False
         )
 
@@ -63,8 +79,24 @@ def main(
         if opponentArchitecture.startswith('Usb_'):
             chunks = ChunkArchName(opponentArchitecture)
             opponent_neural_net = architectures.Usb(
-                number_of_convs=chunks[1],
-                latent_size=chunks[2],
+                number_of_convs=int(chunks[1]),
+                latent_size=int(chunks[2]),
+                dropout_ratio=0.5
+            )
+        elif opponentArchitecture.startswith('Dvi_'):
+            chunks = ChunkArchName(opponentArchitecture)
+            opponent_neural_net = architectures.Dvi(
+                nconv1=int(chunks[1]),
+                nconv2=int(chunks[2]),
+                latent_size=int(chunks[3]),
+                dropout_ratio=0.5
+            )
+        elif opponentArchitecture.startswith('Hdmi_'):
+            chunks = ChunkArchName(opponentArchitecture)
+            opponent_neural_net = architectures.Hdmi(
+                nconv1=int(chunks[1]),
+                nconv2=int(chunks[2]),
+                latent_size=int(chunks[3]),
                 dropout_ratio=0.5
             )
         else:
@@ -74,7 +106,7 @@ def main(
             identifier=opponent_identifier,
             neural_net=opponent_neural_net,
             temperature=opponentTemperature,
-            flatten_state=True,
+            flatten_state=False,
             acts_as_opponent=True
         )
 
