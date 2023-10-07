@@ -2,6 +2,7 @@ import argparse
 import logging
 import learnbyplay.games.tictactoe
 import learnbyplay.games.sumto100
+import learnbyplay.games.connect4
 from learnbyplay.arena import Arena
 import learnbyplay
 import os
@@ -10,6 +11,7 @@ import torch
 import ast
 import architectures.tictactoe_arch as tictactoe_arch
 import architectures.sumto100_arch as sumto100_arch
+import architectures.connect4_arch as connect4_arch
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)-15s %(levelname)s %(message)s')
 
@@ -49,6 +51,11 @@ def main(
         opponent_identifier = 'O'
     elif game == 'sumto100':
         authority = learnbyplay.games.sumto100.SumTo100()
+    elif game == 'connect4':
+        authority = learnbyplay.games.connect4.Connect4()
+        agent_identifier = 'YELLOW'
+        opponent_identifier = 'RED'
+        flatten_state = False
     else:
         raise NotImplementedError(f"generate_positions_expectations.main(): Not implemented game '{game}'")
 
@@ -71,6 +78,29 @@ def main(
             chunks = ChunkArchName(agentArchitecture)
             agent_neural_net = sumto100_arch.Century21(
                 latent_size=int(chunks[1]),
+                dropout_ratio=0.5
+            )
+        elif agentArchitecture.startswith('Usb_'):
+            chunks = ChunkArchName(agentArchitecture)
+            agent_neural_net = connect4_arch.Usb(
+                number_of_convs=int(chunks[1]),
+                latent_size=int(chunks[2]),
+                dropout_ratio=0.5
+            )
+        elif agentArchitecture.startswith('Dvi_'):
+            chunks = ChunkArchName(agentArchitecture)
+            agent_neural_net = connect4_arch.Dvi(
+                nconv1=int(chunks[1]),
+                nconv2=int(chunks[2]),
+                latent_size=int(chunks[3]),
+                dropout_ratio=0.5
+            )
+        elif agentArchitecture.startswith('Hdmi_'):
+            chunks = ChunkArchName(agentArchitecture)
+            agent_neural_net = connect4_arch.Hdmi(
+                nconv1=int(chunks[1]),
+                nconv2=int(chunks[2]),
+                latent_size=int(chunks[3]),
                 dropout_ratio=0.5
             )
         else:
@@ -105,6 +135,29 @@ def main(
             chunks = ChunkArchName(opponentArchitecture)
             opponent_neural_net = sumto100_arch.Century21(
                 latent_size=int(chunks[1]),
+                dropout_ratio=0.5
+            )
+        elif opponentArchitecture.startswith('Usb_'):
+            chunks = ChunkArchName(agentArchitecture)
+            opponent_neural_net = connect4_arch.Usb(
+                number_of_convs=int(chunks[1]),
+                latent_size=int(chunks[2]),
+                dropout_ratio=0.5
+            )
+        elif opponentArchitecture.startswith('Dvi_'):
+            chunks = ChunkArchName(opponentArchitecture)
+            opponent_neural_net = connect4_arch.Dvi(
+                nconv1=int(chunks[1]),
+                nconv2=int(chunks[2]),
+                latent_size=int(chunks[3]),
+                dropout_ratio=0.5
+            )
+        elif opponentArchitecture.startswith('Hdmi_'):
+            chunks = ChunkArchName(opponentArchitecture)
+            opponent_neural_net = connect4_arch.Hdmi(
+                nconv1=int(chunks[1]),
+                nconv2=int(chunks[2]),
+                latent_size=int(chunks[3]),
                 dropout_ratio=0.5
             )
         else:
@@ -164,7 +217,7 @@ if __name__ == '__main__':
     parser.add_argument('--agentFilepath', help="The filepath to the agent neural network. Default: 'None'", default='None')
     parser.add_argument('--opponentArchitecture', help="The architecture for the opponent neural network. Default: 'SaintAndre_512'", default='SaintAndre_512')
     parser.add_argument('--opponentFilepath', help="The filepath to the opponent neural network. Default: 'None'", default='None')
-    parser.add_argument('--epsilons', help="The list of epsilon parameters. Default: '[1.0, 1.0, 0.1]'", default='[1.0, 1.0, 0.1]')
+    parser.add_argument('--epsilons', help="The list of epsilon parameters. Default: '[0.5, 0.5, 0.1]'", default='[0.5, 0.5, 0.1]')
     parser.add_argument('--temperature', help="The SoftMax temperature. Default: 1.0", type=float, default=1.0)
     parser.add_argument('--printPositionsAndExpectations', help="Print the positions and expectations to the console", action='store_true')
     args = parser.parse_args()
