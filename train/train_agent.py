@@ -7,6 +7,7 @@ import random
 import os
 import architectures.tictactoe_arch as tictactoe_arch
 import architectures.sumto100_arch as sumto100_arch
+import architectures.connect4_arch as connect4_arch
 import ast
 import einops
 
@@ -66,6 +67,9 @@ def main(
     elif game == 'sumto100':
         state_shape = (101,)
         unflatten_state = False
+    elif game == 'connect4':
+        state_shape = (2, 6, 7)
+        unflatten_state = True
     else:
         raise NotImplementedError(f"train_agent.main(): Not implemented game '{game}'")
 
@@ -100,6 +104,29 @@ def main(
         chunks = SplitArchName(architecture)
         neural_net = sumto100_arch.Century21(
             latent_size=int(chunks[1]),
+            dropout_ratio=dropoutRatio
+        )
+    elif architecture.startswith('Usb_'):
+        chunks = SplitArchName(architecture)
+        neural_net = connect4_arch.Usb(
+            number_of_convs=int(chunks[1]),
+            latent_size=int(chunks[2]),
+            dropout_ratio=dropoutRatio
+        )
+    elif architecture.startswith('Dvi_'):
+        chunks = SplitArchName(architecture)
+        neural_net = connect4_arch.Dvi(
+            nconv1=int(chunks[1]),
+            nconv2=int(chunks[2]),
+            latent_size=int(chunks[3]),
+            dropout_ratio=dropoutRatio
+        )
+    elif architecture.startswith('Hdmi_'):
+        chunks = SplitArchName(architecture)
+        neural_net = connect4_arch.Hdmi(
+            nconv1=int(chunks[1]),
+            nconv2=int(chunks[2]),
+            latent_size=int(chunks[3]),
             dropout_ratio=dropoutRatio
         )
     else:
