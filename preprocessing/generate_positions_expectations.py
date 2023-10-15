@@ -27,7 +27,9 @@ def main(
     opponentFilepath,
     epsilons,
     temperature,
-    printPositionsAndExpectations
+    printPositionsAndExpectations,
+    splitTrainAndValidation,
+    validationProportion
 ):
     logging.info("generate_positions_expectations.main()")
 
@@ -174,26 +176,65 @@ def main(
         )
 
     arena = Arena(authority, agent, opponent)
-
-    position_expectation_list = arena.GeneratePositionsAndExpectations(number_of_games=numberOfGames,
-                                                                       gamma=gamma,
-                                                                       epsilons=epsilons)
     number_of_cells = ProductOfElements(authority.InitialState().shape)
-    with open(os.path.join(outputDirectory, "dataset.csv"), "w") as output_file:
-        for feature_ndx in range(number_of_cells):
-            output_file.write(f"v{feature_ndx},")
-        output_file.write("return\n")
-        for position, expectation in position_expectation_list:
-            position_vct = position.view(-1)
-            for feature_ndx in range(position_vct.shape[0]):
-                output_file.write(f"{position_vct[feature_ndx].item()},")
-            output_file.write(f"{expectation}\n")
 
-    logging.info(f"Done!")
+    if splitTrainAndValidation:
+        number_of_validation_matches = round(validationProportion * numberOfGames)
+        number_of_train_matches = numberOfGames - number_of_validation_matches
+        # Generate training dataset
+        logging.info(f"Generating training dataset...")
+        train_position_expectation_list = arena.GeneratePositionsAndExpectations(
+            number_of_games=number_of_train_matches,
+            gamma=gamma,
+            epsilons=epsilons)
+        with open(os.path.join(outputDirectory, "train_dataset.csv"), "w") as output_file:
+            for feature_ndx in range(number_of_cells):
+                output_file.write(f"v{feature_ndx},")
+            output_file.write("return\n")
+            for position, expectation in train_position_expectation_list:
+                position_vct = position.view(-1)
+                for feature_ndx in range(position_vct.shape[0]):
+                    output_file.write(f"{position_vct[feature_ndx].item()},")
+                output_file.write(f"{expectation}\n")
 
-    if printPositionsAndExpectations:
-        for position_expectation in position_expectation_list:
-            print(f"{authority.ToString(position_expectation[0])}\n{position_expectation[1]}\n\n")
+        # Generate validation dataset
+        logging.info(f"Generating validation dataset...")
+        validation_position_expectation_list = arena.GeneratePositionsAndExpectations(
+            number_of_games=number_of_validation_matches,
+            gamma=gamma,
+            epsilons=epsilons)
+        with open(os.path.join(outputDirectory, "validation_dataset.csv"), "w") as output_file:
+            for feature_ndx in range(number_of_cells):
+                output_file.write(f"v{feature_ndx},")
+            output_file.write("return\n")
+            for position, expectation in validation_position_expectation_list:
+                position_vct = position.view(-1)
+                for feature_ndx in range(position_vct.shape[0]):
+                    output_file.write(f"{position_vct[feature_ndx].item()},")
+                output_file.write(f"{expectation}\n")
+        logging.info(f"Done!")
+
+
+    else:
+        position_expectation_list = arena.GeneratePositionsAndExpectations(number_of_games=numberOfGames,
+                                                                           gamma=gamma,
+                                                                           epsilons=epsilons)
+
+        with open(os.path.join(outputDirectory, "dataset.csv"), "w") as output_file:
+            for feature_ndx in range(number_of_cells):
+                output_file.write(f"v{feature_ndx},")
+            output_file.write("return\n")
+            for position, expectation in position_expectation_list:
+                position_vct = position.view(-1)
+                for feature_ndx in range(position_vct.shape[0]):
+                    output_file.write(f"{position_vct[feature_ndx].item()},")
+                output_file.write(f"{expectation}\n")
+
+        logging.info(f"Done!")
+
+        if printPositionsAndExpectations:
+            for position_expectation in position_expectation_list:
+                print(f"{authority.ToString(position_expectation[0])}\n{position_expectation[1]}\n\n")
 
 def ProductOfElements(t):
     product = 1
@@ -220,6 +261,8 @@ if __name__ == '__main__':
     parser.add_argument('--epsilons', help="The list of epsilon parameters. Default: '[0.5, 0.5, 0.1]'", default='[0.5, 0.5, 0.1]')
     parser.add_argument('--temperature', help="The SoftMax temperature. Default: 1.0", type=float, default=1.0)
     parser.add_argument('--printPositionsAndExpectations', help="Print the positions and expectations to the console", action='store_true')
+    parser.add_argument('--splitTrainAndValidation', help="Generate separate files for the train and validation datasets", action='store_true')
+    parser.add_argument('--validationProportion', help="In case of --splitTrainAndValidation=True, the validation proportion. Default: 0.2", type=float, default=0.2)
     args = parser.parse_args()
     if args.agentFilepath.upper() == 'NONE':
         args.agentFilepath = None
@@ -238,5 +281,7 @@ if __name__ == '__main__':
         args.opponentFilepath,
         args.epsilons,
         args.temperature,
-        args.printPositionsAndExpectations
+        args.printPositionsAndExpectations,
+        args.splitTrainAndValidation,
+        args.validationProportion
     )
