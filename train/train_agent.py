@@ -34,6 +34,7 @@ class PositionExpectation(Dataset):
 
 def main(
     datasetFilepath,
+    validationDatasetFilepath,
     outputDirectory,
     game,
     randomSeed,
@@ -76,11 +77,17 @@ def main(
     # Load the dataset
     dataset = PositionExpectation(dataset_filepath=datasetFilepath, state_shape=state_shape, unflatten_state=unflatten_state)
 
-    # Split the dataset into training and validation
-    number_of_validation_observations = round(validationRatio * len(dataset))
-    train_dataset, validation_dataset = torch.utils.data.random_split(dataset,
-                                                                      [len(dataset) - number_of_validation_observations,
-                                                                       number_of_validation_observations])
+    if validationDatasetFilepath is None:
+        # Split the dataset into training and validation
+        number_of_validation_observations = round(validationRatio * len(dataset))
+        train_dataset, validation_dataset = torch.utils.data.random_split(dataset,
+                                                                          [len(dataset) - number_of_validation_observations,
+                                                                           number_of_validation_observations])
+    else:  # Load the validation dataset
+        train_dataset = dataset
+        validation_dataset = PositionExpectation(dataset_filepath=validationDatasetFilepath,
+                                                 state_shape=state_shape,
+                                                 unflatten_state=unflatten_state)
     logging.info(f"len(train_dataset) = {len(train_dataset)}")
     # Create data loaders
     train_dataloader = DataLoader(train_dataset, batch_size=batchSize, shuffle=True)
@@ -207,6 +214,7 @@ def SplitArchName(arch_name):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('datasetFilepath', help="The filepath to the csv file giving the positions and the expected return")
+    parser.add_argument('--validationDatasetFilepath', help="If not None, the validation dataset. Default: 'None'", default='None')
     parser.add_argument('--outputDirectory',
                         help="The output directory. Default: './output_train_agent'",
                         default="./output_train_agent")
@@ -222,10 +230,13 @@ if __name__ == '__main__':
     parser.add_argument('--numberOfEpochs', help="The number of epochs. Default: 50", type=int, default=50)
     parser.add_argument('--startingNeuralNetworkFilepath', help="The filepath to the starting neural network. Default: 'None'", default='None')
     args = parser.parse_args()
+    if args.validationDatasetFilepath.upper() == 'NONE':
+        args.validationDatasetFilepath = None
     if args.startingNeuralNetworkFilepath.upper() == 'NONE':
         args.startingNeuralNetworkFilepath = None
     main(
         args.datasetFilepath,
+        args.validationDatasetFilepath,
         args.outputDirectory,
         args.game,
         args.randomSeed,
